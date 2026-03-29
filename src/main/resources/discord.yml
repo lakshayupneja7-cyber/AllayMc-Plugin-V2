@@ -1,0 +1,7 @@
+discord:
+  enabled: false
+  webhook-url: ""
+  send-case-created: true
+  send-recovery-started: true
+  send-case-completed: true
+  send-case-failed: true
