@@ -13,25 +13,34 @@ public class NetherBorderService {
         this.borderStateManager = borderStateManager;
     }
 
-    public boolean isInsideMainBorder(Location location) {
+    public boolean isNether(Location location) {
         if (location == null || location.getWorld() == null) return false;
         String world = plugin.getConfig().getString("borders.nether.world", "world_nether");
-        if (!location.getWorld().getName().equalsIgnoreCase(world)) return false;
+        return location.getWorld().getName().equalsIgnoreCase(world);
+    }
+
+    public boolean isInsideMainBorder(Location location) {
+        if (!isNether(location)) return false;
+
         double half = borderStateManager.getNetherMainSize() / 2.0;
         double cx = plugin.getConfig().getDouble("borders.nether.center-x", 0.0);
         double cz = plugin.getConfig().getDouble("borders.nether.center-z", 0.0);
-        return Math.abs(location.getX() - cx) <= half && Math.abs(location.getZ() - cz) <= half;
+
+        return Math.abs(location.getX() - cx) <= half &&
+                Math.abs(location.getZ() - cz) <= half;
     }
 
     public boolean isOutsideExileBorder(Location location) {
-        if (location == null || location.getWorld() == null) return false;
-        String world = plugin.getConfig().getString("borders.nether.world", "world_nether");
-        if (!location.getWorld().getName().equalsIgnoreCase(world)) return false;
+        if (!isNether(location)) return false;
+
         double threshold = plugin.getConfig().getDouble("borders.nether.exile-threshold-blocks", 250000.0);
-        return Math.abs(location.getX()) >= threshold && Math.abs(location.getZ()) >= threshold;
+
+        return Math.abs(location.getX()) >= threshold &&
+                Math.abs(location.getZ()) >= threshold;
     }
 
     public boolean isDangerZone(Location location) {
+        if (!isNether(location)) return false;
         return !isInsideMainBorder(location) && !isOutsideExileBorder(location);
     }
 }
