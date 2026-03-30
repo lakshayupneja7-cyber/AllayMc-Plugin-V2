@@ -2,12 +2,15 @@ package com.allaymc.exile.service;
 
 import com.allaymc.exile.AllayMcPlugin;
 import com.allaymc.exile.data.ExileCase;
+import com.allaymc.exile.data.RecoveryRequirement;
 import com.allaymc.exile.gui.RecoveryGui;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RecoveryService {
     private final AllayMcPlugin plugin;
@@ -32,7 +35,7 @@ public class RecoveryService {
 
     public void openRecovery(Player player, ExileCase exileCase) {
         player.openInventory(new RecoveryGui(plugin, exileCase).build());
-        player.sendMessage(plugin.getMessageUtil().get("recover-open"));
+        player.sendMessage(plugin.getMessageUtil().get("payoff-open"));
     }
 
     public boolean tryComplete(Player player, ExileCase exileCase, Inventory inventory, boolean earlyRecovery) {
@@ -41,18 +44,23 @@ public class RecoveryService {
 
         boolean valid = validationService.validateRecovery(inventory, depositStart, depositSize, exileCase.getRequiredItems());
         if (!valid) {
-            player.sendMessage(plugin.getMessageUtil().get("recover-incomplete"));
+            player.sendMessage(plugin.getMessageUtil().get("payoff-incomplete"));
             return false;
         }
 
         exileCaseService.markCompleted(exileCase);
+
+        List<RecoveryRequirement> paid = new ArrayList<>();
+        for (RecoveryRequirement req : exileCase.getRequiredItems()) {
+            paid.add(new RecoveryRequirement(req.getMaterial(), req.getAmount()));
+        }
+        exileCase.setPaidItems(paid);
+        exileCase.setPaidItemsClaimed(false);
+        plugin.getCaseDataManager().putCase(exileCase);
+
         exileService.freePlayer(player, false);
 
-        if (earlyRecovery) {
-            player.sendMessage(plugin.getMessageUtil().get("recover-early-success"));
-        } else {
-            player.sendMessage(plugin.getMessageUtil().get("recovery-success"));
-        }
+        player.sendMessage(plugin.getMessageUtil().get("payoff-early-success"));
         return true;
     }
 
