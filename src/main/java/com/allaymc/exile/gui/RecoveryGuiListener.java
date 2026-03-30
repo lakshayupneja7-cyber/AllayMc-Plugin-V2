@@ -2,7 +2,6 @@ package com.allaymc.exile.gui;
 
 import com.allaymc.exile.AllayMcPlugin;
 import com.allaymc.exile.data.ExileCase;
-import com.allaymc.exile.data.ExileData;
 import com.allaymc.exile.service.ExileCaseService;
 import com.allaymc.exile.service.RecoveryService;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -52,8 +51,12 @@ public class RecoveryGuiListener implements Listener {
             event.setCancelled(true);
             ExileCase exileCase = recoveryGuiHolder.getExileCase();
 
-            if (recoveryService.tryComplete(player, exileCase, event.getInventory())) {
+            boolean success = recoveryService.tryComplete(player, exileCase, event.getInventory());
+            if (success) {
+                plugin.getCaseHistoryManager().updateCase(player.getUniqueId(), exileCase.getCaseId(), exileCase.getStatus().name());
                 player.closeInventory();
+            } else {
+                player.sendMessage(plugin.getMessageUtil().color("&cRecovery incomplete. Deposit exact required items."));
             }
         }
     }
@@ -79,19 +82,17 @@ public class RecoveryGuiListener implements Listener {
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
         if (!(event.getInventory().getHolder() instanceof RecoveryGuiHolder recoveryGuiHolder)) return;
-
         if (!(event.getPlayer() instanceof Player player)) return;
 
-        ExileData data = plugin.getPlayerDataManager().getData(player.getUniqueId());
-        if (!data.isExiled()) return;
-
         ExileCase exileCase = recoveryGuiHolder.getExileCase();
+        if (!plugin.getPlayerDataManager().getData(player.getUniqueId()).isExiled()) return;
         if (exileCase.getStatus() != ExileCase.Status.RECOVERY_PENDING) return;
 
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-            if (player.isOnline() && plugin.getPlayerDataManager().getData(player.getUniqueId()).isExiled()) {
-                player.openInventory(new RecoveryGui(plugin, exileCase).build());
-            }
-        }, 1L);
+        boolean success = recoveryService.tryComplete(player, exileCase, event.getInventory());
+        if (success) {
+            plugin.getCaseHistoryManager().updateCase(player.getUniqueId(), exileCase.getCaseId(), exileCase.getStatus().name());
+        } else {
+            player.sendMessage(plugin.getMessageUtil().color("&eRecovery still pending. Submit exact required items before grace time ends."));
+        }
     }
 }
