@@ -48,18 +48,18 @@ barrier:
 recovery:
   enabled: true
   auto-open-gui: true
+  grace-seconds: 60
   fail-action: "ban"
   fail-ban-reason: "Failed exile recovery requirements"
   allow-partial-deposit: false
   strict-meta-match: false
   keep-player-in-exile-during-recovery: true
-  gui-title: "&cExile Recovery"
+  gui-title: "&cExile Payoff"
   recovery-world: ""
   recovery-x: 0.0
   recovery-y: 80.0
   recovery-z: 0.0
   
-
 return-location:
   use-config-return-if-normal-location-missing: true
   world: "world"
