@@ -31,11 +31,14 @@ public class AllayMcPlugin extends JavaPlugin {
     private RecoveryService recoveryService;
     private SchedulerService schedulerService;
 
-    public static AllayMcPlugin getInstance() { return instance; }
+    public static AllayMcPlugin getInstance() {
+        return instance;
+    }
 
     @Override
     public void onEnable() {
         instance = this;
+
         saveDefaultConfig();
         saveResourceIfNotExists("messages.yml");
         saveResourceIfNotExists("gui.yml");
@@ -53,7 +56,7 @@ public class AllayMcPlugin extends JavaPlugin {
         punishmentService = new PunishmentService(this);
         validationService = new ValidationService();
         exileCaseService = new ExileCaseService(this, caseDataManager, playerDataManager);
-        recoveryService = new RecoveryService(this, exileCaseService, validationService, punishmentService, playerDataManager, exileService);
+        recoveryService = new RecoveryService(this, exileCaseService, validationService, punishmentService, exileService);
         schedulerService = new SchedulerService(this, caseDataManager, exileCaseService, recoveryService);
 
         registerCommands();
@@ -76,14 +79,18 @@ public class AllayMcPlugin extends JavaPlugin {
     }
 
     private void registerCommands() {
-        bind("exile", new ExileCommand(this));
-        bind("exileadd", new ExileCommand(this));
-        bind("exilefree", new ExileCommand(this));
-        bind("exileextend", new ExileCommand(this));
-        bind("exileremove", new ExileCommand(this));
-        bind("exilecount", new ExileCommand(this));
-        bind("serverborder", new ServerBorderCommand(this));
-        bind("caseadmin", new CaseAdminCommand(this));
+        ExileCommand exileCommand = new ExileCommand(this);
+        ServerBorderCommand serverBorderCommand = new ServerBorderCommand(this);
+        CaseAdminCommand caseAdminCommand = new CaseAdminCommand(this);
+
+        bind("exile", exileCommand);
+        bind("exileadd", exileCommand);
+        bind("exilefree", exileCommand);
+        bind("exileextend", exileCommand);
+        bind("exileremove", exileCommand);
+        bind("exilecount", exileCommand);
+        bind("serverborder", serverBorderCommand);
+        bind("caseadmin", caseAdminCommand);
     }
 
     private void bind(String name, Object executor) {
@@ -104,19 +111,56 @@ public class AllayMcPlugin extends JavaPlugin {
     }
 
     private void saveResourceIfNotExists(String path) {
-        if (!new File(getDataFolder(), path).exists()) saveResource(path, false);
+        if (!new File(getDataFolder(), path).exists()) {
+            saveResource(path, false);
+        }
     }
 
-    public PlayerDataManager getPlayerDataManager() { return playerDataManager; }
-    public CaseDataManager getCaseDataManager() { return caseDataManager; }
-    public BorderStateManager getBorderStateManager() { return borderStateManager; }
-    public MessageUtil getMessageUtil() { return messageUtil; }
-    public DiscordWebhookService getDiscordWebhookService() { return discordWebhookService; }
-    public BorderService getBorderService() { return borderService; }
-    public NetherBorderService getNetherBorderService() { return netherBorderService; }
-    public ExileService getExileService() { return exileService; }
-    public PunishmentService getPunishmentService() { return punishmentService; }
-    public ValidationService getValidationService() { return validationService; }
-    public ExileCaseService getExileCaseService() { return exileCaseService; }
-    public RecoveryService getRecoveryService() { return recoveryService; }
+    public PlayerDataManager getPlayerDataManager() {
+        return playerDataManager;
+    }
+
+    public CaseDataManager getCaseDataManager() {
+        return caseDataManager;
+    }
+
+    public BorderStateManager getBorderStateManager() {
+        return borderStateManager;
+    }
+
+    public MessageUtil getMessageUtil() {
+        return messageUtil;
+    }
+
+    public DiscordWebhookService getDiscordWebhookService() {
+        return discordWebhookService;
+    }
+
+    public BorderService getBorderService() {
+        return borderService;
+    }
+
+    public NetherBorderService getNetherBorderService() {
+        return netherBorderService;
+    }
+
+    public ExileService getExileService() {
+        return exileService;
+    }
+
+    public PunishmentService getPunishmentService() {
+        return punishmentService;
+    }
+
+    public ValidationService getValidationService() {
+        return validationService;
+    }
+
+    public ExileCaseService getExileCaseService() {
+        return exileCaseService;
+    }
+
+    public RecoveryService getRecoveryService() {
+        return recoveryService;
+    }
 }
