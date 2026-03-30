@@ -12,11 +12,16 @@ import java.util.Map;
 public final class ItemMatcher {
     private ItemMatcher() {}
 
-    public static boolean matchesExactly(Inventory inventory, List<RecoveryRequirement> requirements) {
+    public static boolean matchesExactlyInRange(Inventory inventory, int startSlot, int slotCount, List<RecoveryRequirement> requirements) {
         Map<Material, Integer> deposited = new HashMap<>();
 
-        for (ItemStack item : inventory.getContents()) {
+        for (int i = 0; i < slotCount; i++) {
+            int slot = startSlot + i;
+            if (slot >= inventory.getSize()) break;
+
+            ItemStack item = inventory.getItem(slot);
             if (item == null || item.getType().isAir()) continue;
+
             deposited.merge(item.getType(), item.getAmount(), Integer::sum);
         }
 
