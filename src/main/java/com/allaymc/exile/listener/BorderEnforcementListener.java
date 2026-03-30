@@ -27,7 +27,12 @@ public class BorderEnforcementListener implements Listener {
         Location to = event.getTo();
         if (to == null || from.getWorld() == null || to.getWorld() == null) return;
         if (!from.getWorld().equals(to.getWorld())) return;
-        if (from.getBlockX() == to.getBlockX() && from.getBlockZ() == to.getBlockZ() && from.getBlockY() == to.getBlockY()) return;
+
+        if (from.getBlockX() == to.getBlockX()
+                && from.getBlockY() == to.getBlockY()
+                && from.getBlockZ() == to.getBlockZ()) {
+            return;
+        }
 
         Player player = event.getPlayer();
         boolean exiled = exileService.isExiled(player.getUniqueId());
@@ -37,16 +42,18 @@ public class BorderEnforcementListener implements Listener {
         boolean fromOutsideExile;
         boolean toOutsideExile;
 
-        if (from.getWorld().getName().equalsIgnoreCase(exileService.getPlugin().getConfig().getString("borders.nether.world", "world_nether"))) {
+        if (netherBorderService.isNether(from)) {
             fromInsideMain = netherBorderService.isInsideMainBorder(from);
             toInsideMain = netherBorderService.isInsideMainBorder(to);
             fromOutsideExile = netherBorderService.isOutsideExileBorder(from);
             toOutsideExile = netherBorderService.isOutsideExileBorder(to);
-        } else {
+        } else if (borderService.isOverworld(from)) {
             fromInsideMain = borderService.isInsideMainBorder(from);
             toInsideMain = borderService.isInsideMainBorder(to);
             fromOutsideExile = borderService.isOutsideExileBorder(from);
             toOutsideExile = borderService.isOutsideExileBorder(to);
+        } else {
+            return;
         }
 
         if (!exiled && fromInsideMain && !toInsideMain) {
@@ -58,7 +65,7 @@ public class BorderEnforcementListener implements Listener {
 
         if (!exiled && !fromOutsideExile && toOutsideExile) {
             event.setCancelled(true);
-            borderService.showExileBorderHit(player, to);
+            borderService.showExileBorderHit(player, to, false);
             borderService.applyKnockback(player, from, to);
             return;
         }
