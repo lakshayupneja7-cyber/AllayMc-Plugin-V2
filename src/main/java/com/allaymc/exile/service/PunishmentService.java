@@ -1,6 +1,8 @@
 package com.allaymc.exile.service;
 
 import com.allaymc.exile.AllayMcPlugin;
+import org.bukkit.BanList;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 public class PunishmentService {
@@ -11,6 +13,18 @@ public class PunishmentService {
     }
 
     public void failRecovery(Player player) {
-        player.banPlayer(plugin.getMessageUtil().get("recover-timeout"));
+        String reason = plugin.getConfig().getString(
+                "recovery.fail-ban-reason",
+                "Failed exile recovery requirements"
+        );
+
+        Bukkit.getBanList(BanList.Type.NAME).addBan(
+                player.getName(),
+                reason,
+                null,
+                "AllayMc"
+        );
+
+        player.kickPlayer(plugin.getMessageUtil().get("recover-timeout"));
     }
 }
