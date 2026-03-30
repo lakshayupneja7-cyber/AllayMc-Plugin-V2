@@ -45,6 +45,7 @@ public class CaseDataManager {
     public void saveCase(ExileCase exileCase) {
         File file = new File(dir, exileCase.getCaseId() + ".yml");
         YamlConfiguration yml = new YamlConfiguration();
+
         yml.set("caseId", exileCase.getCaseId());
         yml.set("playerUuid", exileCase.getPlayerUuid().toString());
         yml.set("staffUuid", exileCase.getStaffUuid().toString());
@@ -53,31 +54,59 @@ public class CaseDataManager {
         yml.set("endTime", exileCase.getEndTime());
         yml.set("graceEndTime", exileCase.getGraceEndTime());
         yml.set("status", exileCase.getStatus().name());
+        yml.set("paidItemsClaimed", exileCase.isPaidItemsClaimed());
 
-        List<Map<String, Object>> requirements = new ArrayList<>();
-        for (RecoveryRequirement req : exileCase.getRequiredItems()) {
-            Map<String, Object> entry = new HashMap<>();
-            entry.put("material", req.getMaterial().name());
-            entry.put("amount", req.getAmount());
-            requirements.add(entry);
+        yml.set("requiredItems", serializeRequirements(exileCase.getRequiredItems()));
+        yml.set("paidItems", serializeRequirements(exileCase.getPaidItems()));
+
+        try {
+            yml.save(file);
+        } catch (IOException e) {
+            plugin.getLogger().severe("Failed to save case " + exileCase.getCaseId());
         }
-        yml.set("requiredItems", requirements);
-
-        try { yml.save(file); } catch (IOException e) { plugin.getLogger().severe("Failed to save case " + exileCase.getCaseId()); }
     }
 
     public void saveAll() {
-        for (ExileCase exileCase : cache.values()) saveCase(exileCase);
+        for (ExileCase exileCase : cache.values()) {
+            saveCase(exileCase);
+        }
+    }
+
+    private List<Map<String, Object>> serializeRequirements(List<RecoveryRequirement> requirements) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (RecoveryRequirement req : requirements) {
+            Map<String, Object> entry = new HashMap<>();
+            entry.put("material", req.getMaterial().name());
+            entry.put("amount", req.getAmount());
+            result.add(entry);
+        }
+        return result;
+    }
+
+    private List<RecoveryRequirement> deserializeRequirements(List<Map<?, ?>> maps) {
+        List<RecoveryRequirement> requirements = new ArrayList<>();
+        for (Map<?, ?> map : maps) {
+            try {
+                Material material = Material.valueOf(String.valueOf(map.get("material")));
+                int amount = Integer.parseInt(String.valueOf(map.get("amount")));
+                requirements.add(new RecoveryRequirement(material, amount));
+            } catch (Exception ignored) {
+            }
+        }
+        return requirements;
     }
 
     private void loadAll() {
         cache.clear();
+
         File[] files = dir.listFiles((d, n) -> n.toLowerCase(Locale.ROOT).endsWith(".yml"));
         if (files == null) return;
+
         for (File file : files) {
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
             String caseId = yml.getString("caseId");
             if (caseId == null) continue;
+
             try {
                 ExileCase exileCase = new ExileCase();
                 exileCase.setCaseId(caseId);
@@ -88,18 +117,14 @@ public class CaseDataManager {
                 exileCase.setEndTime(yml.getLong("endTime", 0L));
                 exileCase.setGraceEndTime(yml.getLong("graceEndTime", 0L));
                 exileCase.setStatus(ExileCase.Status.valueOf(yml.getString("status", ExileCase.Status.ACTIVE_EXILE.name())));
-                List<Map<?, ?>> list = yml.getMapList("requiredItems");
-                List<RecoveryRequirement> requirements = new ArrayList<>();
-                for (Map<?, ?> map : list) {
-                    try {
-                        Material material = Material.valueOf(String.valueOf(map.get("material")));
-                        int amount = Integer.parseInt(String.valueOf(map.get("amount")));
-                        requirements.add(new RecoveryRequirement(material, amount));
-                    } catch (Exception ignored) {}
-                }
-                exileCase.setRequiredItems(requirements);
+                exileCase.setPaidItemsClaimed(yml.getBoolean("paidItemsClaimed", false));
+
+                exileCase.setRequiredItems(deserializeRequirements(yml.getMapList("requiredItems")));
+                exileCase.setPaidItems(deserializeRequirements(yml.getMapList("paidItems")));
+
                 cache.put(caseId.toUpperCase(Locale.ROOT), exileCase);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
     }
 }
