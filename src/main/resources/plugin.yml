@@ -1,9 +1,9 @@
 name: AllayMc
-version: 2.2.1
+version: 2.2.2
 main: com.allaymc.exile.AllayMcPlugin
 api-version: "1.21"
-author: AllayMc
-description: Final exile system with donut borders, guided cases, recovery and Discord webhooks
+author: ElleIsOP
+description: A plugin Special to AllayMc Minecraft Server
 softdepend: [LuckPerms]
 
 commands:
@@ -52,9 +52,9 @@ commands:
     usage: /exilecase create <player> | /exilecase cancel
     permission: allaymc.exile.add
 
-  recover:
-    description: Open recovery menu to repay exile items early
-    usage: /recover
+  payoff:
+    description: Open payoff menu or claim paid items
+    usage: /payoff | /payoff claim <caseId>
     permission: allaymc.exile.self
 
 permissions:
@@ -80,6 +80,8 @@ permissions:
     default: op
   allaymc.case.admin:
     default: op
+  allaymc.payoff.claim:
+    default: op
   allaymc.admin:
     default: op
     children:
@@ -93,3 +95,4 @@ permissions:
       allaymc.serverborder.set: true
       allaymc.serverborder.add: true
       allaymc.case.admin: true
+      allaymc.payoff.claim: true
