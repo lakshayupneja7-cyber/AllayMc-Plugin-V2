@@ -1,9 +1,10 @@
 recovery:
   rows: 6
   preview-start: 9
+  preview-size: 10
   deposit-start: 27
-  deposit-size: 18
-  confirm-slot: 49
+  deposit-size: 20
+  confirm-slot: 50
   info-slot: 4
   filler-material: GRAY_STAINED_GLASS_PANE
   confirm-material: LIME_CONCRETE
