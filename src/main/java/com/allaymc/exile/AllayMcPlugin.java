@@ -1,9 +1,6 @@
 package com.allaymc.exile;
 
-import com.allaymc.exile.command.CaseAdminCommand;
-import com.allaymc.exile.command.ExileCaseCommand;
-import com.allaymc.exile.command.ExileCommand;
-import com.allaymc.exile.command.ServerBorderCommand;
+import com.allaymc.exile.command.*;
 import com.allaymc.exile.data.*;
 import com.allaymc.exile.discord.DiscordWebhookService;
 import com.allaymc.exile.gui.CaseReviewGuiListener;
@@ -73,7 +70,7 @@ public class AllayMcPlugin extends JavaPlugin {
         exileService.startDangerZoneTask();
         schedulerService.startRecoveryWatcher();
 
-        getLogger().info("AllayMc V2.2 enabled.");
+        getLogger().info("AllayMc V2.2.2 enabled.");
     }
 
     @Override
@@ -81,7 +78,7 @@ public class AllayMcPlugin extends JavaPlugin {
         if (exileService != null) exileService.saveAllOnlineExileStates();
         if (playerDataManager != null) playerDataManager.saveAll();
         if (caseDataManager != null) caseDataManager.saveAll();
-        getLogger().info("AllayMc V2.2 disabled.");
+        getLogger().info("AllayMc V2.2.2 disabled.");
     }
 
     private void registerCommands() {
@@ -89,6 +86,7 @@ public class AllayMcPlugin extends JavaPlugin {
         ServerBorderCommand serverBorderCommand = new ServerBorderCommand(this);
         CaseAdminCommand caseAdminCommand = new CaseAdminCommand(this);
         ExileCaseCommand exileCaseCommand = new ExileCaseCommand(this);
+        PayoffCommand payoffCommand = new PayoffCommand(this);
 
         bind("exile", exileCommand);
         bind("exileadd", exileCommand);
@@ -99,6 +97,7 @@ public class AllayMcPlugin extends JavaPlugin {
         bind("serverborder", serverBorderCommand);
         bind("caseadmin", caseAdminCommand);
         bind("exilecase", exileCaseCommand);
+        bind("payoff", payoffCommand);
     }
 
     private void bind(String name, Object executor) {
