@@ -7,7 +7,8 @@ import org.bukkit.inventory.Inventory;
 import java.util.List;
 
 public class ValidationService {
+
     public boolean validateRecovery(Inventory inventory, List<RecoveryRequirement> requirements) {
-        return ItemMatcher.matches(inventory, requirements);
+        return ItemMatcher.matchesExactly(inventory, requirements);
     }
 }
