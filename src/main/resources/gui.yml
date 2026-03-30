@@ -9,16 +9,17 @@ recovery:
   confirm-material: LIME_CONCRETE
   info-material: BOOK
 
-case-creation:
+case-review:
   rows: 6
   filler-material: BLACK_STAINED_GLASS_PANE
-  info-slot: 4
-  confirm-slot: 49
-  time-slot: 20
+  target-slot: 4
+  time-slot: 19
   reason-slot: 22
-  item-start: 28
-  item-size: 18
+  items-start: 28
+  items-size: 18
+  confirm-slot: 49
+  cancel-slot: 45
   confirm-material: LIME_CONCRETE
-  info-material: PLAYER_HEAD
+  cancel-material: RED_CONCRETE
   time-material: CLOCK
   reason-material: WRITABLE_BOOK
