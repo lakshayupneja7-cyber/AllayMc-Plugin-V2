@@ -1,9 +1,9 @@
 name: AllayMc
-version: 2.2.0
+version: 2.2.1
 main: com.allaymc.exile.AllayMcPlugin
 api-version: "1.21"
-author: ElleIsOP
-description: A plugin Special to AllayMc 
+author: AllayMc
+description: Final exile system with donut borders, guided cases, recovery and Discord webhooks
 softdepend: [LuckPerms]
 
 commands:
@@ -51,6 +51,11 @@ commands:
     description: Guided exile case creation
     usage: /exilecase create <player> | /exilecase cancel
     permission: allaymc.exile.add
+
+  recover:
+    description: Open recovery menu to repay exile items early
+    usage: /recover
+    permission: allaymc.exile.self
 
 permissions:
   allaymc.exile.self:
