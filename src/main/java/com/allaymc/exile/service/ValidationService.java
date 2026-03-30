@@ -8,7 +8,7 @@ import java.util.List;
 
 public class ValidationService {
 
-    public boolean validateRecovery(Inventory inventory, List<RecoveryRequirement> requirements) {
-        return ItemMatcher.matchesExactly(inventory, requirements);
+    public boolean validateRecovery(Inventory inventory, int depositStart, int depositSize, List<RecoveryRequirement> requirements) {
+        return ItemMatcher.matchesExactlyInRange(inventory, depositStart, depositSize, requirements);
     }
 }
