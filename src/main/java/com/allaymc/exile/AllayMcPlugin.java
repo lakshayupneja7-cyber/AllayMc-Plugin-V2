@@ -6,7 +6,7 @@ import com.allaymc.exile.command.ExileCommand;
 import com.allaymc.exile.command.ServerBorderCommand;
 import com.allaymc.exile.data.*;
 import com.allaymc.exile.discord.DiscordWebhookService;
-import com.allaymc.exile.gui.CaseCreationListener;
+import com.allaymc.exile.gui.CaseReviewGuiListener;
 import com.allaymc.exile.gui.RecoveryGuiListener;
 import com.allaymc.exile.listener.*;
 import com.allaymc.exile.service.*;
@@ -22,6 +22,7 @@ public class AllayMcPlugin extends JavaPlugin {
     private PlayerDataManager playerDataManager;
     private CaseDataManager caseDataManager;
     private CaseHistoryManager caseHistoryManager;
+    private CaseCreationSessionManager caseCreationSessionManager;
     private BorderStateManager borderStateManager;
     private MessageUtil messageUtil;
     private DiscordWebhookService discordWebhookService;
@@ -52,6 +53,7 @@ public class AllayMcPlugin extends JavaPlugin {
         playerDataManager = new PlayerDataManager(this);
         caseDataManager = new CaseDataManager(this);
         caseHistoryManager = new CaseHistoryManager(this);
+        caseCreationSessionManager = new CaseCreationSessionManager();
         borderStateManager = new BorderStateManager(this);
         discordWebhookService = new DiscordWebhookService(this);
         borderService = new BorderService(this, borderStateManager);
@@ -71,7 +73,7 @@ public class AllayMcPlugin extends JavaPlugin {
         exileService.startDangerZoneTask();
         schedulerService.startRecoveryWatcher();
 
-        getLogger().info("AllayMc V2.1 enabled.");
+        getLogger().info("AllayMc V2.2 enabled.");
     }
 
     @Override
@@ -79,7 +81,7 @@ public class AllayMcPlugin extends JavaPlugin {
         if (exileService != null) exileService.saveAllOnlineExileStates();
         if (playerDataManager != null) playerDataManager.saveAll();
         if (caseDataManager != null) caseDataManager.saveAll();
-        getLogger().info("AllayMc V2.1 disabled.");
+        getLogger().info("AllayMc V2.2 disabled.");
     }
 
     private void registerCommands() {
@@ -112,7 +114,8 @@ public class AllayMcPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BorderEnforcementListener(borderService, netherBorderService, exileService), this);
         getServer().getPluginManager().registerEvents(new RecoveryProtectionListener(playerDataManager, caseDataManager), this);
         getServer().getPluginManager().registerEvents(new RecoveryGuiListener(this, recoveryService, exileCaseService), this);
-        getServer().getPluginManager().registerEvents(new CaseCreationListener(this), this);
+        getServer().getPluginManager().registerEvents(new CaseReviewGuiListener(this), this);
+        getServer().getPluginManager().registerEvents(new CaseCreationChatListener(this), this);
         getServer().getPluginManager().registerEvents(new NetherBorderListener(), this);
         getServer().getPluginManager().registerEvents(new ExileCaseListener(), this);
     }
@@ -126,6 +129,7 @@ public class AllayMcPlugin extends JavaPlugin {
     public PlayerDataManager getPlayerDataManager() { return playerDataManager; }
     public CaseDataManager getCaseDataManager() { return caseDataManager; }
     public CaseHistoryManager getCaseHistoryManager() { return caseHistoryManager; }
+    public CaseCreationSessionManager getCaseCreationSessionManager() { return caseCreationSessionManager; }
     public BorderStateManager getBorderStateManager() { return borderStateManager; }
     public MessageUtil getMessageUtil() { return messageUtil; }
     public DiscordWebhookService getDiscordWebhookService() { return discordWebhookService; }
