@@ -1,9 +1,9 @@
 name: AllayMc
-version: 2.0.0
+version: 2.1.0
 main: com.allaymc.exile.AllayMcPlugin
 api-version: "1.21"
 author: AllayMc
-description: Exile system with donut borders, recovery cases, GUI and Discord webhooks
+description: Exile system with donut borders, GUI cases, recovery and Discord webhooks
 softdepend: [LuckPerms]
 
 commands:
@@ -11,34 +11,46 @@ commands:
     description: Check your exile status or another player's exile status
     usage: /exile [player]
     permission: allaymc.exile.self
+
   exileadd:
     description: Exile a player for a time
-    usage: /exileadd <player> <time> [reason]
+    usage: /exileadd <player> <time> <reason> <item:amount,item:amount>
     permission: allaymc.exile.add
+
   exilefree:
     description: Free a player from exile
     usage: /exilefree <player>
     permission: allaymc.exile.free
+
   exileextend:
     description: Extend exile time
     usage: /exileextend <player> <time>
     permission: allaymc.exile.extend
+
   exileremove:
     description: Permanently remove a player from the server
     usage: /exileremove <player>
     permission: allaymc.exile.remove
+
   exilecount:
     description: Check how many times a player was exiled
     usage: /exilecount <player>
     permission: allaymc.exile.count
+
   serverborder:
     description: Manage the custom global server border
     usage: /serverborder | /serverborder set <blocks> | /serverborder add <blocks> | /serverborder chunks
     permission: allaymc.serverborder.view
+
   caseadmin:
     description: Staff controls for cases
-    usage: /caseadmin <open|info|fail|complete|reopen>
+    usage: /caseadmin <info|fail|complete> <caseId>
     permission: allaymc.case.admin
+
+  exilecase:
+    description: Open GUI-based exile case creation
+    usage: /exilecase create <player>
+    permission: allaymc.exile.add
 
 permissions:
   allaymc.exile.self:
