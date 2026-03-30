@@ -21,23 +21,94 @@ public class ExileCase {
     private long graceEndTime;
     private Status status = Status.ACTIVE_EXILE;
     private List<RecoveryRequirement> requiredItems = new ArrayList<>();
+    private List<RecoveryRequirement> paidItems = new ArrayList<>();
+    private boolean paidItemsClaimed = false;
 
-    public String getCaseId() { return caseId; }
-    public void setCaseId(String caseId) { this.caseId = caseId; }
-    public UUID getPlayerUuid() { return playerUuid; }
-    public void setPlayerUuid(UUID playerUuid) { this.playerUuid = playerUuid; }
-    public UUID getStaffUuid() { return staffUuid; }
-    public void setStaffUuid(UUID staffUuid) { this.staffUuid = staffUuid; }
-    public String getReason() { return reason; }
-    public void setReason(String reason) { this.reason = reason; }
-    public long getStartTime() { return startTime; }
-    public void setStartTime(long startTime) { this.startTime = startTime; }
-    public long getEndTime() { return endTime; }
-    public void setEndTime(long endTime) { this.endTime = endTime; }
-    public long getGraceEndTime() { return graceEndTime; }
-    public void setGraceEndTime(long graceEndTime) { this.graceEndTime = graceEndTime; }
-    public Status getStatus() { return status; }
-    public void setStatus(Status status) { this.status = status; }
-    public List<RecoveryRequirement> getRequiredItems() { return requiredItems; }
-    public void setRequiredItems(List<RecoveryRequirement> requiredItems) { this.requiredItems = requiredItems; }
+    public String getCaseId() {
+        return caseId;
+    }
+
+    public void setCaseId(String caseId) {
+        this.caseId = caseId;
+    }
+
+    public UUID getPlayerUuid() {
+        return playerUuid;
+    }
+
+    public void setPlayerUuid(UUID playerUuid) {
+        this.playerUuid = playerUuid;
+    }
+
+    public UUID getStaffUuid() {
+        return staffUuid;
+    }
+
+    public void setStaffUuid(UUID staffUuid) {
+        this.staffUuid = staffUuid;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+
+    public long getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(long startTime) {
+        this.startTime = startTime;
+    }
+
+    public long getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(long endTime) {
+        this.endTime = endTime;
+    }
+
+    public long getGraceEndTime() {
+        return graceEndTime;
+    }
+
+    public void setGraceEndTime(long graceEndTime) {
+        this.graceEndTime = graceEndTime;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public List<RecoveryRequirement> getRequiredItems() {
+        return requiredItems;
+    }
+
+    public void setRequiredItems(List<RecoveryRequirement> requiredItems) {
+        this.requiredItems = requiredItems;
+    }
+
+    public List<RecoveryRequirement> getPaidItems() {
+        return paidItems;
+    }
+
+    public void setPaidItems(List<RecoveryRequirement> paidItems) {
+        this.paidItems = paidItems;
+    }
+
+    public boolean isPaidItemsClaimed() {
+        return paidItemsClaimed;
+    }
+
+    public void setPaidItemsClaimed(boolean paidItemsClaimed) {
+        this.paidItemsClaimed = paidItemsClaimed;
+    }
 }
