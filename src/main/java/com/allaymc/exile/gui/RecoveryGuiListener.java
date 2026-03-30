@@ -10,6 +10,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.*;
 import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
 
@@ -93,6 +94,27 @@ public class RecoveryGuiListener implements Listener {
         boolean success = recoveryService.tryComplete(player, exileCase, event.getInventory(), early);
         if (success) {
             plugin.getCaseHistoryManager().updateCase(player.getUniqueId(), exileCase.getCaseId(), exileCase.getStatus().name());
+            return;
+        }
+
+        refundDepositItems(player, event.getInventory());
+    }
+
+    private void refundDepositItems(Player player, org.bukkit.inventory.Inventory inventory) {
+        int depositStart = guiConfig.getInt("recovery.deposit-start", 27);
+        int depositSize = guiConfig.getInt("recovery.deposit-size", 20);
+
+        for (int i = 0; i < depositSize; i++) {
+            int slot = depositStart + i;
+            if (slot >= inventory.getSize()) break;
+
+            ItemStack item = inventory.getItem(slot);
+            if (item == null || item.getType().isAir()) continue;
+
+            inventory.setItem(slot, null);
+            player.getInventory().addItem(item).values().forEach(overflow ->
+                    player.getWorld().dropItemNaturally(player.getLocation(), overflow)
+            );
         }
     }
 }
