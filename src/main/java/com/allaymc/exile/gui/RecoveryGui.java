@@ -30,18 +30,25 @@ public class RecoveryGui {
                 plugin.getMessageUtil().color(plugin.getConfig().getString("recovery.gui-title", "&cExile Recovery")));
 
         ItemStack filler = new ItemStack(Material.valueOf(guiConfig.getString("recovery.filler-material", "GRAY_STAINED_GLASS_PANE")));
-        for (int i = 0; i < inventory.getSize(); i++) inventory.setItem(i, filler);
+        ItemMeta fillerMeta = filler.getItemMeta();
+        fillerMeta.setDisplayName(" ");
+        filler.setItemMeta(fillerMeta);
+
+        for (int i = 0; i < inventory.getSize(); i++) {
+            inventory.setItem(i, filler);
+        }
 
         int previewStart = guiConfig.getInt("recovery.preview-start", 9);
+        int previewSize = guiConfig.getInt("recovery.preview-size", 10);
         int depositStart = guiConfig.getInt("recovery.deposit-start", 27);
-        int depositSize = guiConfig.getInt("recovery.deposit-size", 18);
+        int depositSize = guiConfig.getInt("recovery.deposit-size", 20);
 
         for (int i = 0; i < depositSize && depositStart + i < inventory.getSize(); i++) {
             inventory.setItem(depositStart + i, null);
         }
 
         List<RecoveryRequirement> requirements = exileCase.getRequiredItems();
-        for (int i = 0; i < requirements.size() && previewStart + i < inventory.getSize(); i++) {
+        for (int i = 0; i < requirements.size() && i < previewSize && previewStart + i < inventory.getSize(); i++) {
             RecoveryRequirement requirement = requirements.get(i);
             ItemStack item = new ItemStack(requirement.getMaterial(), Math.max(1, requirement.getAmount()));
             ItemMeta meta = item.getItemMeta();
@@ -60,7 +67,7 @@ public class RecoveryGui {
         ItemMeta confirmMeta = confirm.getItemMeta();
         confirmMeta.setDisplayName(plugin.getMessageUtil().color("&aConfirm Recovery"));
         confirm.setItemMeta(confirmMeta);
-        inventory.setItem(guiConfig.getInt("recovery.confirm-slot", 49), confirm);
+        inventory.setItem(guiConfig.getInt("recovery.confirm-slot", 50), confirm);
 
         return inventory;
     }
