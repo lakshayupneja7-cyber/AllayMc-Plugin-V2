@@ -1,9 +1,9 @@
 name: AllayMc
-version: 2.1.0
+version: 2.2.0
 main: com.allaymc.exile.AllayMcPlugin
 api-version: "1.21"
-author: AllayMc
-description: Exile system with donut borders, GUI cases, recovery and Discord webhooks
+author: ElleIsOP
+description: A plugin Special to AllayMc 
 softdepend: [LuckPerms]
 
 commands:
@@ -48,8 +48,8 @@ commands:
     permission: allaymc.case.admin
 
   exilecase:
-    description: Open GUI-based exile case creation
-    usage: /exilecase create <player>
+    description: Guided exile case creation
+    usage: /exilecase create <player> | /exilecase cancel
     permission: allaymc.exile.add
 
 permissions:
