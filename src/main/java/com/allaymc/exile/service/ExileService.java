@@ -2,11 +2,13 @@ package com.allaymc.exile.service;
 
 import com.allaymc.exile.AllayMcPlugin;
 import com.allaymc.exile.data.ExileData;
-import com.allaymc.exile.util.LocationUtil;
 import com.allaymc.exile.util.InventoryUtil;
+import com.allaymc.exile.util.LocationUtil;
 import com.allaymc.exile.util.TimeUtil;
+import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -22,12 +24,15 @@ public class ExileService {
         this.playerDataManager = playerDataManager;
     }
 
-    public AllayMcPlugin getPlugin() { return plugin; }
+    public AllayMcPlugin getPlugin() {
+        return plugin;
+    }
 
     public void disableVanillaWorldBorder() {
         String worldName = plugin.getConfig().getString("borders.overworld.world", "world");
         World world = Bukkit.getWorld(worldName);
         if (world == null) return;
+
         WorldBorder border = world.getWorldBorder();
         border.setCenter(0.0, 0.0);
         border.setSize(5.9999968E7);
@@ -39,11 +44,15 @@ public class ExileService {
 
     public void startTimerTask() {
         long periodTicks = Math.max(20L, plugin.getConfig().getLong("settings.timer-check-seconds", 1) * 20L);
+
         Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 ExileData data = playerDataManager.getData(player.getUniqueId());
                 if (!data.isExiled()) continue;
-                if (System.currentTimeMillis() >= data.getExileEndTime()) {
+
+                long remaining = data.getExileEndTime() - System.currentTimeMillis();
+
+                if (remaining <= 0) {
                     String caseId = data.getActiveCaseId();
                     if (caseId != null && !caseId.isBlank()) {
                         var exileCase = plugin.getCaseDataManager().getCase(caseId);
@@ -53,6 +62,10 @@ public class ExileService {
                             player.sendMessage(plugin.getMessageUtil().get("player-time-ended"));
                         }
                     }
+                } else {
+                    player.sendActionBar(Component.text(plugin.getMessageUtil().color(
+                            "&cExiled &7| &e" + TimeUtil.formatDuration(remaining) + " &7left"
+                    )));
                 }
             }
         }, 20L, periodTicks);
@@ -60,13 +73,17 @@ public class ExileService {
 
     public void startDangerZoneTask() {
         if (!plugin.getConfig().getBoolean("danger-zone.enabled", true)) return;
+
         long periodTicks = Math.max(20L, plugin.getConfig().getLong("danger-zone.hit-interval-seconds", 1) * 20L);
+
         Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
-                boolean danger = plugin.getBorderService().isDangerZone(player.getLocation()) || plugin.getNetherBorderService().isDangerZone(player.getLocation());
+                boolean danger = plugin.getBorderService().isDangerZone(player.getLocation())
+                        || plugin.getNetherBorderService().isDangerZone(player.getLocation());
+
                 if (danger) {
                     player.damage(plugin.getConfig().getDouble("danger-zone.damage-per-hit", 8.0));
-                    player.sendActionBar(net.kyori.adventure.text.Component.text(plugin.getMessageUtil().color(
+                    player.sendActionBar(Component.text(plugin.getMessageUtil().color(
                             plugin.getConfig().getString("danger-zone.warning-actionbar", "&4TURN BACK")
                     )));
                 }
@@ -84,9 +101,13 @@ public class ExileService {
 
     public void exilePlayer(Player player, long durationMillis, String reason) {
         ExileData data = playerDataManager.getData(player.getUniqueId());
+
         saveNormalState(player, data);
         clearPlayer(player);
-        if (!data.getExileInventory().isEmpty()) loadExileInventory(player, data);
+
+        if (!data.getExileInventory().isEmpty()) {
+            loadExileInventory(player, data);
+        }
 
         Location exileLocation = generateRandomExileLocation(player.getWorld().getEnvironment() == World.Environment.NETHER);
         if (exileLocation == null) {
@@ -104,13 +125,36 @@ public class ExileService {
         playerDataManager.save(player.getUniqueId());
 
         String time = TimeUtil.formatDuration(durationMillis);
-        player.sendMessage(plugin.getMessageUtil().get("player-exiled-chat").replace("%time%", time));
-        player.sendMessage(plugin.getMessageUtil().get("player-exiled-reason").replace("%reason%", data.getReason()));
-        player.sendMessage(plugin.getMessageUtil().get("player-exiled-location")
-                .replace("%x%", String.valueOf(exileLocation.getBlockX()))
-                .replace("%z%", String.valueOf(exileLocation.getBlockZ())));
-        player.sendTitle(plugin.getMessageUtil().raw("player-exiled-title"),
-                plugin.getMessageUtil().raw("player-exiled-subtitle").replace("%time%", time), 10, 60, 20);
+
+        player.sendTitle(
+                plugin.getMessageUtil().raw("player-exiled-title"),
+                plugin.getMessageUtil().raw("player-exiled-subtitle").replace("%time%", time),
+                10, 60, 20
+        );
+
+        player.sendMessage(plugin.getMessageUtil().color(
+                "&cYou have been exiled for &6" + time + "&c. Reason: &f" + data.getReason()
+        ));
+
+        notifyStaffExile(player, exileLocation, time, data.getReason());
+    }
+
+    private void notifyStaffExile(Player target, Location exileLocation, String time, String reason) {
+        String msg = plugin.getMessageUtil().color(
+                "&8[&bAllayMc&8] &c" + target.getName() +
+                        " &7was exiled for &6" + time +
+                        " &7| Reason: &f" + reason +
+                        " &7| Location: &e" + exileLocation.getBlockX() + ", " + exileLocation.getBlockZ()
+        );
+
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            if (online.hasPermission("allaymc.exile.others")) {
+                online.sendMessage(msg);
+            }
+        }
+
+        ConsoleCommandSender console = Bukkit.getConsoleSender();
+        console.sendMessage(msg);
     }
 
     public void rerollExileLocation(Player player) {
@@ -127,11 +171,14 @@ public class ExileService {
         ExileData data = playerDataManager.getData(player.getUniqueId());
         data.setExileEndTime(data.getExileEndTime() + extraMillis);
         playerDataManager.save(player.getUniqueId());
-        player.sendMessage(plugin.getMessageUtil().get("player-extended-chat").replace("%time%", TimeUtil.formatDuration(extraMillis)));
+
+        player.sendMessage(plugin.getMessageUtil().get("player-extended-chat")
+                .replace("%time%", TimeUtil.formatDuration(extraMillis)));
     }
 
     public void freePlayer(Player player, boolean timeEnded) {
         ExileData data = playerDataManager.getData(player.getUniqueId());
+
         saveExileState(player, data);
         clearPlayer(player);
         loadNormalState(player, data);
@@ -144,16 +191,21 @@ public class ExileService {
 
         teleportToReturn(player, data);
         playerDataManager.save(player.getUniqueId());
+
         player.sendMessage(plugin.getMessageUtil().get(timeEnded ? "player-time-ended" : "player-freed-chat"));
     }
 
     public void removePlayerPermanently(Player player) {
         String mode = plugin.getConfig().getString("punishments.exileremove.mode", "kick").toLowerCase();
+
         switch (mode) {
             case "ban" -> {
-                Bukkit.getBanList(BanList.Type.NAME).addBan(player.getName(),
+                Bukkit.getBanList(BanList.Type.NAME).addBan(
+                        player.getName(),
                         plugin.getConfig().getString("punishments.exileremove.ban-reason", "Removed from server by exile punishment."),
-                        null, "AllayMc");
+                        null,
+                        "AllayMc"
+                );
                 player.kickPlayer(plugin.getConfig().getString("punishments.exileremove.ban-reason", "Removed from server by exile punishment."));
             }
             default -> player.kickPlayer(plugin.getConfig().getString("punishments.exileremove.kick-message", "Removed."));
@@ -164,27 +216,40 @@ public class ExileService {
         ExileData data = playerDataManager.getData(player.getUniqueId());
         if (!data.isExiled()) return;
         if (System.currentTimeMillis() >= data.getExileEndTime()) return;
+
         saveExileState(player, data);
         clearPlayer(player);
         loadExileInventory(player, data);
+
         Location exileLoc = LocationUtil.deserialize(data.getExileLocation());
         if (exileLoc == null) {
             exileLoc = generateRandomExileLocation(player.getWorld().getEnvironment() == World.Environment.NETHER);
-            if (exileLoc != null) data.setExileLocation(LocationUtil.serialize(exileLoc));
+            if (exileLoc != null) {
+                data.setExileLocation(LocationUtil.serialize(exileLoc));
+            }
         }
-        if (exileLoc != null) player.teleport(exileLoc);
+
+        if (exileLoc != null) {
+            player.teleport(exileLoc);
+        }
+
         playerDataManager.save(player.getUniqueId());
     }
 
     public void savePlayerStateOnQuit(Player player) {
         ExileData data = playerDataManager.getData(player.getUniqueId());
-        if (data.isExiled()) saveExileState(player, data);
-        else saveNormalState(player, data);
+        if (data.isExiled()) {
+            saveExileState(player, data);
+        } else {
+            saveNormalState(player, data);
+        }
         playerDataManager.save(player.getUniqueId());
     }
 
     public void saveAllOnlineExileStates() {
-        for (Player player : Bukkit.getOnlinePlayers()) savePlayerStateOnQuit(player);
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            savePlayerStateOnQuit(player);
+        }
     }
 
     public Location getSavedExileLocation(UUID uuid) {
@@ -202,6 +267,7 @@ public class ExileService {
         ItemStack[] storage = InventoryUtil.itemStackArrayFromBase64(data.getNormalInventory());
         ItemStack[] armor = InventoryUtil.itemStackArrayFromBase64(data.getNormalArmor());
         ItemStack[] offhand = InventoryUtil.itemStackArrayFromBase64(data.getNormalOffhand());
+
         player.getInventory().setStorageContents(fixSize(storage, 36));
         player.getInventory().setArmorContents(fixSize(armor, 4));
         player.getInventory().setItemInOffHand(offhand.length > 0 ? offhand[0] : null);
@@ -218,6 +284,7 @@ public class ExileService {
         ItemStack[] storage = InventoryUtil.itemStackArrayFromBase64(data.getExileInventory());
         ItemStack[] armor = InventoryUtil.itemStackArrayFromBase64(data.getExileArmor());
         ItemStack[] offhand = InventoryUtil.itemStackArrayFromBase64(data.getExileOffhand());
+
         player.getInventory().setStorageContents(fixSize(storage, 36));
         player.getInventory().setArmorContents(fixSize(armor, 4));
         player.getInventory().setItemInOffHand(offhand.length > 0 ? offhand[0] : null);
@@ -226,7 +293,9 @@ public class ExileService {
 
     private ItemStack[] fixSize(ItemStack[] items, int size) {
         ItemStack[] fixed = new ItemStack[size];
-        for (int i = 0; i < Math.min(items.length, size); i++) fixed[i] = items[i];
+        for (int i = 0; i < Math.min(items.length, size); i++) {
+            fixed[i] = items[i];
+        }
         return fixed;
     }
 
@@ -239,65 +308,98 @@ public class ExileService {
 
     private void teleportToReturn(Player player, ExileData data) {
         Location target = null;
-        if (plugin.getConfig().getBoolean("settings.restore-normal-location-on-free", true) &&
-                data.getNormalLocation() != null && !data.getNormalLocation().isEmpty()) {
+
+        if (plugin.getConfig().getBoolean("settings.restore-normal-location-on-free", true)
+                && data.getNormalLocation() != null
+                && !data.getNormalLocation().isEmpty()) {
             target = LocationUtil.deserialize(data.getNormalLocation());
         }
+
         if (target == null && plugin.getConfig().getBoolean("return-location.use-config-return-if-normal-location-missing", true)) {
             World world = Bukkit.getWorld(plugin.getConfig().getString("return-location.world"));
             if (world != null) {
-                target = new Location(world,
+                target = new Location(
+                        world,
                         plugin.getConfig().getDouble("return-location.x"),
                         plugin.getConfig().getDouble("return-location.y"),
                         plugin.getConfig().getDouble("return-location.z"),
                         (float) plugin.getConfig().getDouble("return-location.yaw"),
-                        (float) plugin.getConfig().getDouble("return-location.pitch"));
+                        (float) plugin.getConfig().getDouble("return-location.pitch")
+                );
             }
         }
-        if (target != null) player.teleport(target);
+
+        if (target != null) {
+            player.teleport(target);
+        }
     }
 
     private Location generateRandomExileLocation(boolean nether) {
         String prefix = nether ? "borders.nether" : "borders.overworld";
         World world = Bukkit.getWorld(plugin.getConfig().getString(prefix + ".world", nether ? "world_nether" : "world"));
         if (world == null) return null;
+
         int minCoord = (int) Math.round(plugin.getConfig().getDouble(prefix + ".exile-spawn-min", nether ? 250000.0 : 2000000.0));
         int maxCoord = (int) Math.round(plugin.getConfig().getDouble(prefix + ".exile-spawn-max", nether ? 300000.0 : 2300000.0));
         int threshold = (int) Math.round(plugin.getConfig().getDouble(prefix + ".exile-threshold-blocks", nether ? 250000.0 : 2000000.0));
         int tries = plugin.getConfig().getInt("borders.safe-teleport-tries", 100);
+
         ThreadLocalRandom random = ThreadLocalRandom.current();
 
         for (int i = 0; i < tries; i++) {
             int x = random.nextInt(minCoord, maxCoord + 1);
             int z = random.nextInt(minCoord, maxCoord + 1);
+
             if (random.nextBoolean()) x = -x;
             if (random.nextBoolean()) z = -z;
-            if (Math.abs(x) < threshold || Math.abs(z) < threshold) continue;
+
+            if (Math.abs(x) < threshold || Math.abs(z) < threshold) {
+                continue;
+            }
 
             int y = world.getHighestBlockYAt(x, z) + 1;
-            if (y < world.getMinHeight() + 1 || y > world.getMaxHeight()) continue;
+            if (y < world.getMinHeight() + 1 || y > world.getMaxHeight()) {
+                continue;
+            }
 
             Block ground = world.getBlockAt(x, y - 1, z);
             Material groundType = ground.getType();
-            if (!isSafeGround(groundType)) continue;
+
+            if (!isSafeGround(groundType)) {
+                continue;
+            }
 
             Block feet = world.getBlockAt(x, y, z);
             Block head = world.getBlockAt(x, y + 1, z);
-            if (!feet.isPassable() || !head.isPassable()) continue;
+
+            if (!feet.isPassable() || !head.isPassable()) {
+                continue;
+            }
 
             return new Location(world, x + 0.5, y, z + 0.5);
         }
+
         return null;
     }
 
     private boolean isSafeGround(Material material) {
         if (material.isAir()) return false;
-        if (plugin.getConfig().getBoolean("borders.avoid-water", true) &&
-                (material == Material.WATER || material == Material.KELP || material == Material.SEAGRASS)) return false;
-        if (plugin.getConfig().getBoolean("borders.avoid-lava", true) &&
-                (material == Material.LAVA || material == Material.MAGMA_BLOCK)) return false;
-        if (plugin.getConfig().getBoolean("borders.avoid-leaves", true) &&
-                material.name().endsWith("_LEAVES")) return false;
+
+        if (plugin.getConfig().getBoolean("borders.avoid-water", true)
+                && (material == Material.WATER || material == Material.KELP || material == Material.SEAGRASS)) {
+            return false;
+        }
+
+        if (plugin.getConfig().getBoolean("borders.avoid-lava", true)
+                && (material == Material.LAVA || material == Material.MAGMA_BLOCK)) {
+            return false;
+        }
+
+        if (plugin.getConfig().getBoolean("borders.avoid-leaves", true)
+                && material.name().endsWith("_LEAVES")) {
+            return false;
+        }
+
         return true;
     }
 }
