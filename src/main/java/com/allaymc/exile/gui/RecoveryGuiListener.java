@@ -32,8 +32,8 @@ public class RecoveryGuiListener implements Listener {
         if (!(holder instanceof RecoveryGuiHolder recoveryGuiHolder)) return;
 
         int depositStart = guiConfig.getInt("recovery.deposit-start", 27);
-        int depositSize = guiConfig.getInt("recovery.deposit-size", 18);
-        int confirmSlot = guiConfig.getInt("recovery.confirm-slot", 49);
+        int depositSize = guiConfig.getInt("recovery.deposit-size", 20);
+        int confirmSlot = guiConfig.getInt("recovery.confirm-slot", 50);
 
         int slot = event.getRawSlot();
 
@@ -51,12 +51,12 @@ public class RecoveryGuiListener implements Listener {
             event.setCancelled(true);
             ExileCase exileCase = recoveryGuiHolder.getExileCase();
 
-            boolean success = recoveryService.tryComplete(player, exileCase, event.getInventory());
+            boolean early = exileCase.getStatus() == ExileCase.Status.ACTIVE_EXILE;
+            boolean success = recoveryService.tryComplete(player, exileCase, event.getInventory(), early);
+
             if (success) {
                 plugin.getCaseHistoryManager().updateCase(player.getUniqueId(), exileCase.getCaseId(), exileCase.getStatus().name());
                 player.closeInventory();
-            } else {
-                player.sendMessage(plugin.getMessageUtil().color("&cRecovery incomplete. Deposit exact required items."));
             }
         }
     }
@@ -66,7 +66,7 @@ public class RecoveryGuiListener implements Listener {
         if (!(event.getInventory().getHolder() instanceof RecoveryGuiHolder)) return;
 
         int depositStart = guiConfig.getInt("recovery.deposit-start", 27);
-        int depositSize = guiConfig.getInt("recovery.deposit-size", 18);
+        int depositSize = guiConfig.getInt("recovery.deposit-size", 20);
 
         for (int slot : event.getRawSlots()) {
             if (slot < event.getInventory().getSize()) {
@@ -86,13 +86,13 @@ public class RecoveryGuiListener implements Listener {
 
         ExileCase exileCase = recoveryGuiHolder.getExileCase();
         if (!plugin.getPlayerDataManager().getData(player.getUniqueId()).isExiled()) return;
-        if (exileCase.getStatus() != ExileCase.Status.RECOVERY_PENDING) return;
 
-        boolean success = recoveryService.tryComplete(player, exileCase, event.getInventory());
+        boolean early = exileCase.getStatus() == ExileCase.Status.ACTIVE_EXILE
+                || exileCase.getStatus() == ExileCase.Status.RECOVERY_PENDING;
+
+        boolean success = recoveryService.tryComplete(player, exileCase, event.getInventory(), early);
         if (success) {
             plugin.getCaseHistoryManager().updateCase(player.getUniqueId(), exileCase.getCaseId(), exileCase.getStatus().name());
-        } else {
-            player.sendMessage(plugin.getMessageUtil().color("&eRecovery still pending. Submit exact required items before grace time ends."));
         }
     }
 }
