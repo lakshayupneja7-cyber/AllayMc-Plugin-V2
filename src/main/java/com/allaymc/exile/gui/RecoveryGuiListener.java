@@ -2,6 +2,7 @@ package com.allaymc.exile.gui;
 
 import com.allaymc.exile.AllayMcPlugin;
 import com.allaymc.exile.data.ExileCase;
+import com.allaymc.exile.data.ExileData;
 import com.allaymc.exile.service.ExileCaseService;
 import com.allaymc.exile.service.RecoveryService;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -9,7 +10,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.*;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 
 import java.io.File;
@@ -32,41 +32,43 @@ public class RecoveryGuiListener implements Listener {
         InventoryHolder holder = event.getInventory().getHolder();
         if (!(holder instanceof RecoveryGuiHolder recoveryGuiHolder)) return;
 
-        int previewStart = guiConfig.getInt("recovery.preview-start", 9);
         int depositStart = guiConfig.getInt("recovery.deposit-start", 27);
         int depositSize = guiConfig.getInt("recovery.deposit-size", 18);
         int confirmSlot = guiConfig.getInt("recovery.confirm-slot", 49);
 
         int slot = event.getRawSlot();
+
         if (slot < event.getInventory().getSize()) {
-            boolean depositArea = slot >= depositStart && slot < depositStart + depositSize;
-            boolean playerInventory = false;
-            if (!depositArea && slot != confirmSlot) {
+            boolean isDepositSlot = slot >= depositStart && slot < depositStart + depositSize;
+            boolean isConfirm = slot == confirmSlot;
+
+            if (!isDepositSlot && !isConfirm) {
                 event.setCancelled(true);
+                return;
             }
         }
 
         if (slot == confirmSlot && event.getWhoClicked() instanceof Player player) {
             event.setCancelled(true);
             ExileCase exileCase = recoveryGuiHolder.getExileCase();
+
             if (recoveryService.tryComplete(player, exileCase, event.getInventory())) {
                 player.closeInventory();
-            } else {
-                player.sendMessage(plugin.getMessageUtil().color("&cExact required items not deposited."));
             }
         }
     }
 
     @EventHandler
     public void onDrag(InventoryDragEvent event) {
-        if (event.getInventory().getHolder() instanceof RecoveryGuiHolder) {
-            int depositStart = guiConfig.getInt("recovery.deposit-start", 27);
-            int depositSize = guiConfig.getInt("recovery.deposit-size", 18);
-            for (int slot : event.getRawSlots()) {
-                if (slot >= depositStart && slot < depositStart + depositSize) {
-                    continue;
-                }
-                if (slot < event.getInventory().getSize()) {
+        if (!(event.getInventory().getHolder() instanceof RecoveryGuiHolder)) return;
+
+        int depositStart = guiConfig.getInt("recovery.deposit-start", 27);
+        int depositSize = guiConfig.getInt("recovery.deposit-size", 18);
+
+        for (int slot : event.getRawSlots()) {
+            if (slot < event.getInventory().getSize()) {
+                boolean isDepositSlot = slot >= depositStart && slot < depositStart + depositSize;
+                if (!isDepositSlot) {
                     event.setCancelled(true);
                     return;
                 }
@@ -76,17 +78,20 @@ public class RecoveryGuiListener implements Listener {
 
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
-        if (event.getInventory().getHolder() instanceof RecoveryGuiHolder && plugin.getConfig().getBoolean("recovery.auto-open-gui", true)) {
-            if (event.getPlayer() instanceof Player player && player.isOnline()) {
-                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                    if (player.isOnline() && plugin.getPlayerDataManager().getData(player.getUniqueId()).isExiled()) {
-                        ExileCase exileCase = ((RecoveryGuiHolder) event.getInventory().getHolder()).getExileCase();
-                        if (exileCase.getStatus() == ExileCase.Status.RECOVERY_PENDING) {
-                            player.openInventory(new RecoveryGui(plugin, exileCase).build());
-                        }
-                    }
-                }, 1L);
+        if (!(event.getInventory().getHolder() instanceof RecoveryGuiHolder recoveryGuiHolder)) return;
+
+        if (!(event.getPlayer() instanceof Player player)) return;
+
+        ExileData data = plugin.getPlayerDataManager().getData(player.getUniqueId());
+        if (!data.isExiled()) return;
+
+        ExileCase exileCase = recoveryGuiHolder.getExileCase();
+        if (exileCase.getStatus() != ExileCase.Status.RECOVERY_PENDING) return;
+
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (player.isOnline() && plugin.getPlayerDataManager().getData(player.getUniqueId()).isExiled()) {
+                player.openInventory(new RecoveryGui(plugin, exileCase).build());
             }
-        }
+        }, 1L);
     }
 }
